@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import "./globals.css";
 import {
   LayoutDashboard,
   Eye,
   TrendingUp,
-  Settings,
   ShieldAlert,
+  Settings,
   User
 } from 'lucide-react';
 
@@ -25,30 +27,32 @@ export default function RootLayout({
         <div className="layout-container">
           <aside className="sidebar">
             <div className="logo-section">
-              <h2 className="gradient-text">EcoStream AI</h2>
+              <Link href="/" className="logo-link">
+                <h2 className="gradient-text">EcoStream AI</h2>
+              </Link>
               <span className="status-badge"><span className="pulse"></span> Network Live</span>
             </div>
             <nav className="main-nav">
-              <a href="#" className="nav-item active">
+              <Link href="/" className={`nav-item ${usePathname() === '/' ? 'active' : ''}`}>
                 <LayoutDashboard size={18} />
                 Dashboard
-              </a>
-              <a href="#" className="nav-item">
+              </Link>
+              <Link href="/vision" className={`nav-item ${usePathname() === '/vision' ? 'active' : ''}`}>
                 <Eye size={18} />
                 Vision Feed
-              </a>
-              <a href="#" className="nav-item">
+              </Link>
+              <Link href="/forecast" className={`nav-item ${usePathname() === '/forecast' ? 'active' : ''}`}>
                 <TrendingUp size={18} />
                 Market Forecast
-              </a>
-              <a href="#" className="nav-item">
+              </Link>
+              <Link href="/orchestration" className={`nav-item ${usePathname() === '/orchestration' ? 'active' : ''}`}>
                 <ShieldAlert size={18} />
                 Orchestration
-              </a>
-              <a href="#" className="nav-item">
+              </Link>
+              <Link href="/settings" className={`nav-item ${usePathname() === '/settings' ? 'active' : ''}`}>
                 <Settings size={18} />
                 System Config
-              </a>
+              </Link>
             </nav>
             <div className="sidebar-footer">
               <div className="user-profile">
