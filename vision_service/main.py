@@ -3,7 +3,14 @@ import cv2
 import numpy as np
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from PIL import Image
+from pillow_heif import register_heif_opener
+import PIL.ImageOps
+
 from .detector import DefectDetector
+
+# Register HEIF opener for iPhone support
+register_heif_opener()
 
 app = FastAPI(title="MarginGuard VQI Service", version="1.0.0")
 
@@ -26,22 +33,31 @@ async def root():
 async def detect_defects(file: UploadFile = File(...)):
     """
     Endpoint for real-time defect detection.
-    Expects an image file.
+    Supports JPG, PNG, TIFF, HEIC, WEBP, etc.
     """
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Invalid file type. Please upload an image.")
+    # Relaxed type check since we use Pillow for robust decoding
+    content = await file.read()
     
     try:
-        # Read image
-        content = await file.read()
-        nparr = np.frombuffer(content, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        # Load image via Pillow (supports TIFF, HEIC, etc.)
+        pil_img = Image.open(io.BytesIO(content))
+        
+        # Convert to RGB (required for YOLO/OpenCV processing)
+        if pil_img.mode != "RGB":
+            pil_img = pil_img.convert("RGB")
+            
+        # Convert to OpenCV BGR format
+        img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
         
         if img is None:
             raise HTTPException(status_code=400, detail="Could not decode image.")
             
         # Detect
         results = detector.detect(img)
+        
+        # Add metadata about format
+        results["format"] = pil_img.format
+        results["mode"] = pil_img.mode
         
         return results
         
