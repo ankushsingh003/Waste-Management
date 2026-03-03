@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -15,12 +15,19 @@ import {
   ShieldCheck,
   Terminal,
   TrendingUp,
-  Zap
+  Zap,
+  Upload,
+  Camera
 } from 'lucide-react';
 
 export default function DashboardPage() {
   const [defectRate, setDefectRate] = useState(1.8);
   const [productionSpeed, setProductionSpeed] = useState(850);
+  const [isUploading, setIsUploading] = useState(false);
+  const [inspectResult, setInspectResult] = useState<any>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [logs, setLogs] = useState([
     { id: 1, time: '14:20:05', msg: 'Neural Node 4: Surface scan complete (No defects)', type: 'info' },
     { id: 2, time: '14:21:12', msg: 'Forecaster: Paper price pivot detected (+2.4%)', type: 'warning' },
@@ -35,6 +42,38 @@ export default function DashboardPage() {
     }, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setPreviewUrl(URL.createObjectURL(file));
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('http://localhost:8001/detect', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      setInspectResult(data);
+
+      const newLog = {
+        id: Date.now(),
+        time: new Date().toLocaleTimeString(),
+        msg: `Manual Inspect: ${data.total_defects} defects found (${data.quality_score} score)`,
+        type: data.total_defects > 0 ? 'warning' : 'success'
+      };
+      setLogs(prev => [newLog, ...prev.slice(0, 10)]);
+    } catch (error) {
+      console.error("Analysis failed", error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
     <div className="dashboard-container">
@@ -94,24 +133,61 @@ export default function DashboardPage() {
               <h3>Neural Vision Matrix</h3>
             </div>
             <div className="feed-controls">
-              <span className="feed-id">CAM_04_SURFACE</span>
-              <div className="led green"></div>
+              <button
+                className="btn-inspect"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload size={14} /> {isUploading ? 'Analyzing...' : 'Inspect Image'}
+              </button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                style={{ display: 'none' }}
+                accept="image/*"
+              />
             </div>
           </div>
+
           <div className="viewport">
-            <div className="scan-line"></div>
-            <div className="grid-overlay"></div>
-            <div className="defects-layer">
-              <div className="detection-box" style={{ top: '30%', left: '45%', width: '120px', height: '80px' }}>
-                <span className="box-label">INK_SPLAT [98%]</span>
+            {previewUrl ? (
+              <div className="preview-container">
+                <img src={previewUrl} alt="Inspection" className="inspect-preview" />
+                {inspectResult?.defects?.map((defect: any, idx: number) => (
+                  <div
+                    key={idx}
+                    className="detection-box"
+                    style={{
+                      top: `${defect.box[1] * 100}%`,
+                      left: `${defect.box[0] * 100}%`,
+                      width: `${(defect.box[2] - defect.box[0]) * 100}%`,
+                      height: `${(defect.box[3] - defect.box[1]) * 100}%`
+                    }}
+                  >
+                    <span className="box-label">{defect.label} [{Math.round(defect.confidence * 100)}%]</span>
+                  </div>
+                ))}
               </div>
-            </div>
+            ) : (
+              <>
+                <div className="scan-line"></div>
+                <div className="grid-overlay"></div>
+                <div className="defects-layer">
+                  <div className="detection-box" style={{ top: '30%', left: '45%', width: '120px', height: '80px' }}>
+                    <span className="box-label">SIMULATED_SPLAT [98%]</span>
+                  </div>
+                </div>
+              </>
+            )}
+
             <div className="telemetry-overlay">
-              <div>LATENCY: 42ms</div>
-              <div>RESOLUTION: 1280x720</div>
-              <div>MODEL: YOLOv8_PREMIUM</div>
+              <div>LATENCY: {isUploading ? '---' : '42ms'}</div>
+              <div>RESOLUTION: {previewUrl ? 'Detecting...' : '1280x720'}</div>
+              <div>MODEL: YOLOv8_INDUSTRIAL</div>
+              {inspectResult && <div style={{ color: 'var(--primary)' }}>QUALITY_SCORE: {inspectResult.quality_score}</div>}
             </div>
           </div>
+
           <div className="feed-vignettes">
             {[1, 2, 3].map(i => (
               <div key={i} className="vignette">
@@ -193,6 +269,36 @@ export default function DashboardPage() {
         .dashboard-container {
           animation: fade-in 1s ease-out;
         }
+        
+        .preview-container {
+          width: 100%;
+          height: 100%;
+          position: relative;
+        }
+
+        .inspect-preview {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          background: #000;
+        }
+
+        .btn-inspect {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 16px;
+          background: var(--primary);
+          color: black;
+          border: none;
+          border-radius: 6px;
+          font-weight: 700;
+          font-size: 12px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .btn-inspect:hover { transform: scale(1.05); }
 
         .breadcrumb {
           font-size: 10px;
@@ -308,6 +414,7 @@ export default function DashboardPage() {
           font-size: 10px;
           font-weight: 800;
           padding: 2px 6px;
+          white-space: nowrap;
         }
 
         .telemetry-overlay {
