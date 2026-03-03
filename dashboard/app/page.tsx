@@ -34,12 +34,32 @@ export default function DashboardPage() {
     { id: 3, time: '14:22:30', msg: 'Orchestrator: Executing Hedge Strategy Q3', type: 'success' },
   ]);
 
+  const [forecast, setForecast] = useState<any>(null);
+
   // Simulate live data
   useEffect(() => {
     const interval = setInterval(() => {
       setDefectRate(prev => Math.max(0.5, Math.min(5, prev + (Math.random() - 0.5) * 0.2)));
       setProductionSpeed(prev => Math.max(700, Math.min(1000, prev + (Math.random() - 0.5) * 10)));
     }, 3000);
+
+    // Initial Forecast Fetch
+    const fetchForecast = async () => {
+      try {
+        const response = await fetch('http://localhost:8002/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            material_name: "Premium Glossy Paper",
+            historical_prices: [120, 122, 121, 123, 125, 124, 126, 128, 127, 129]
+          })
+        });
+        const data = await response.json();
+        setForecast(data);
+      } catch (e) { console.error("Forecast failed", e); }
+    };
+    fetchForecast();
+
     return () => clearInterval(interval);
   }, []);
 
@@ -116,10 +136,12 @@ export default function DashboardPage() {
             <TrendingUp size={18} className="icon-accent" />
             <span>Margin Guard</span>
           </div>
-          <div className="kpi-value">+$1.4k</div>
-          <div className="kpi-trend warning">Projected ROI Offset (Price)</div>
+          <div className="kpi-value">{forecast ? `$${forecast.predicted_price}` : '---'}</div>
+          <div className={`kpi-trend ${forecast?.trend === 'up' ? 'warning' : 'good'}`}>
+            {forecast ? `Trend: ${forecast.trend.toUpperCase()} (${forecast.material_name})` : 'Calculating Neural Hedge...'}
+          </div>
           <div className="sparkline">
-            {[20, 30, 45, 60, 55, 70, 85].map((h, i) => (
+            {[45, 50, 48, 52, 55, 60, 65].map((h, i) => (
               <div key={i} className="spark-bar accent" style={{ height: `${h}%` }}></div>
             ))}
           </div>
