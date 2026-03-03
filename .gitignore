@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Large Datasets & Models
+augraphy_cache/
+dataset_v1/
+dataset_v2/
+runs/
+training_runs/
+*.pt
+*.h5
+*.gz
+
+# IDEs
+.vscode/
+.idea/
