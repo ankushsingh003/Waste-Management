@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: printsense-ai-dashboard
+    env: node
+    region: oregon
+    plan: free
+    rootDir: dashboard
+    buildCommand: npm install && npm run build
+    startCommand: node .next/standalone/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: NEXT_PUBLIC_VISION_API
+        value: https://your-vision-api.onrender.com
+      - key: NEXT_PUBLIC_FORECAST_API
+        value: https://your-forecast-api.onrender.com
+      - key: NEXT_PUBLIC_ORCHESTRATOR_API
+        value: https://your-orchestrator-api.onrender.com

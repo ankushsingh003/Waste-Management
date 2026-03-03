@@ -1,19 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import "./globals.css";
-import {
-  LayoutDashboard,
-  Eye,
-  TrendingUp,
-  ShieldAlert,
-  Settings,
-  User
-} from 'lucide-react';
+import Sidebar from "./components/Sidebar";
 
 export const metadata: Metadata = {
-  title: "EcoStream AI | Industrial Command Center",
-  description: "Advanced Printing & Packaging Production Intelligence",
+  title: "PrintSense AI | Industrial Command Center",
+  description: "Advanced Printing & Packaging Production Intelligence Platform",
 };
 
 export default function RootLayout({
@@ -23,50 +14,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+      </head>
       <body>
         <div className="layout-container">
-          <aside className="sidebar">
-            <div className="logo-section">
-              <Link href="/" className="logo-link">
-                <h2 className="gradient-text">EcoStream AI</h2>
-              </Link>
-              <span className="status-badge"><span className="pulse"></span> Network Live</span>
-            </div>
-            <nav className="main-nav">
-              <Link href="/" className={`nav-item ${usePathname() === '/' ? 'active' : ''}`}>
-                <LayoutDashboard size={18} />
-                Dashboard
-              </Link>
-              <Link href="/vision" className={`nav-item ${usePathname() === '/vision' ? 'active' : ''}`}>
-                <Eye size={18} />
-                Vision Feed
-              </Link>
-              <Link href="/forecast" className={`nav-item ${usePathname() === '/forecast' ? 'active' : ''}`}>
-                <TrendingUp size={18} />
-                Market Forecast
-              </Link>
-              <Link href="/orchestration" className={`nav-item ${usePathname() === '/orchestration' ? 'active' : ''}`}>
-                <ShieldAlert size={18} />
-                Orchestration
-              </Link>
-              <Link href="/settings" className={`nav-item ${usePathname() === '/settings' ? 'active' : ''}`}>
-                <Settings size={18} />
-                System Config
-              </Link>
-            </nav>
-            <div className="sidebar-footer">
-              <div className="user-profile">
-                <div className="avatar">
-                  <User size={16} />
-                </div>
-                <div className="user-info">
-                  <p className="name">Ankush Singh</p>
-                  <p className="role">Factory Director</p>
-                </div>
-              </div>
-            </div>
-          </aside>
-          <main className="content-area">
+          <Sidebar />
+          <main className="content-area" style={{ marginLeft: '220px' }}>
             {children}
           </main>
         </div>
